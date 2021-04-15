@@ -120,11 +120,14 @@ def cwt(data, scales, wavelet, sampling_period=1., method='conv', axis=-1):
     if not np.isscalar(axis):
         raise ValueError("axis must be a scalar.")
 
-    dt_out = dt_cplx if wavelet.complex_cwt else dt
-    out = np.empty((np.size(scales),) + data.shape, dtype=dt_out)
+    #dt_out = dt_cplx if wavelet.complex_cwt else dt
+    out = np.empty((np.size(scales),) + data.shape, dtype=dt)
     precision = 10
-    int_psi, x = integrate_wavelet(wavelet, precision=precision)
-    int_psi = np.conj(int_psi) if wavelet.complex_cwt else int_psi
+    if wavelet.orthogonal:
+        int_psi, x = integrate_wavelet(wavelet, precision=precision)
+    elif wavelet.biorthogonal:
+        int_psi, int_psi_r, x = integrate_wavelet(wavelet, precision=precision)        
+    #int_psi = np.conj(int_psi) if wavelet.complex_cwt else int_psi
 
     # convert int_psi, x to the same precision as the data
     dt_psi = dt_cplx if int_psi.dtype.kind == 'c' else dt
@@ -161,7 +164,7 @@ def cwt(data, scales, wavelet, sampling_period=1., method='conv', axis=-1):
                 conv_shape = list(data.shape)
                 conv_shape[-1] += int_psi_scale.size - 1
                 conv_shape = tuple(conv_shape)
-                conv = np.empty(conv_shape, dtype=dt_out)
+                conv = np.empty(conv_shape, dtype=dt)
                 for n in range(data.shape[0]):
                     conv[n, :] = np.convolve(data[n], int_psi_scale)
         else:
